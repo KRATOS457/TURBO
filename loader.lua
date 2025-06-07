@@ -1,11 +1,10 @@
--- Your loader (no key)
-local src = "https://raw.githubusercontent.com/KRATOS457/TURBO/main/main.lua"
-local success, response = pcall(function()
-    return game:HttpGet(src)
+local url = "https://raw.githubusercontent.com/KRATOS457/TURBO/main/main.lua"
+local success, scriptContent = pcall(function()
+    return game:HttpGet(url)
 end)
 
 if success then
-    loadstring(response)()
+    loadstring(scriptContent)()
 else
-    warn("Failed to load script:", response)
+    warn("Failed to load main.lua:", scriptContent)
 end
