@@ -1,26 +1,27 @@
--- DuckHub Ultra (Silent Aim + ESP, keyless)
--- REFERENCE: https://chat.openai.com/share/c4e3a327-b0db-48e7-96ff-32c7f0a9fd46
+-- DuckHub Lite: Optimized Z3US Clone
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
+local Mouse = game.Players.LocalPlayer:GetMouse()
 
--- SETTINGS
+-- Settings
 local SilentAimEnabled = true
 local SilentAimPart = "Head"
 local ESPEnabled = true
+local FPSCap = 60
 
--- UI
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "DuckHubUltra"
+-- Set FPS Cap
+setfpscap(FPSCap)
 
--- FPS LIMIT (optional for compatible executors)
-pcall(function() setfpscap(100) end)
+-- FPS Optimizations
+game:GetService("RunService").Heartbeat:Connect(function()
+    -- Disable unnecessary graphics settings
+    game.Workspace.CurrentCamera.FieldOfView = 70
+    game.GraphicsQuality = Enum.QualityLevel.Level2
+end)
 
--- ESP
-function createESP(player)
+-- ESP Function
+local function createESP(player)
     if not player.Character or not player.Character:FindFirstChild("Head") then return end
     local bb = Instance.new("BillboardGui", player.Character.Head)
     bb.Name = "ESP"
@@ -38,30 +39,30 @@ end
 
 if ESPEnabled then
     for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
+        if plr ~= game.Players.LocalPlayer then
             createESP(plr)
         end
     end
     Players.PlayerAdded:Connect(function(plr)
         plr.CharacterAdded:Connect(function()
-            task.wait(1)
             createESP(plr)
         end)
     end)
 end
 
--- Silent Aim Logic
-function getClosestTarget()
-    local closest, shortest = nil, math.huge
+-- Silent Aim Function
+local function getClosestTarget()
+    local closest = nil
+    local shortestDistance = math.huge
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild(SilentAimPart) then
+        if plr ~= game.Players.LocalPlayer and plr.Character and plr.Character:FindFirstChild(SilentAimPart) then
             local part = plr.Character[SilentAimPart]
-            local screenPos, visible = Camera:WorldToViewportPoint(part.Position)
-            if visible then
+            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+            if onScreen then
                 local dist = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).magnitude
-                if dist < shortest then
+                if dist < shortestDistance then
+                    shortestDistance = dist
                     closest = plr
-                    shortest = dist
                 end
             end
         end
@@ -80,8 +81,8 @@ mt.__namecall = newcclosure(function(self, ...)
     if SilentAimEnabled and method == "FindPartOnRayWithIgnoreList" then
         local target = getClosestTarget()
         if target and target.Character and target.Character:FindFirstChild(SilentAimPart) then
-            local pos = target.Character[SilentAimPart].Position
-            args[1] = Ray.new(Camera.CFrame.Position, (pos - Camera.CFrame.Position).Unit * 1000)
+            local targetPos = target.Character[SilentAimPart].Position
+            args[1] = Ray.new(Camera.CFrame.Position, (targetPos - Camera.CFrame.Position).Unit * 1000)
             return oldNamecall(self, unpack(args))
         end
     end
